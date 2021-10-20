@@ -1,12 +1,10 @@
-use std::vec;
-
 // =============================================================================
 // SyntacticHeap
 // =============================================================================
 
 pub struct Node<T> {
-    kind: T,
-    children: Vec<usize>
+    pub kind: T,
+    pub children: Vec<usize>
 }
 
 pub struct SyntacticHeap<T> {
