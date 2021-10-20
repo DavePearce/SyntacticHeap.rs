@@ -43,7 +43,8 @@ impl<T> SyntacticHeap<T> {
 #[cfg(test)]
 mod tests {
     #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
+    fn test_01() {
+        let mut heap = crate::SyntacticHeap::<i32>::new();
+	assert_eq!(heap.push(0,&[]),0);
     }
 }
