@@ -1,0 +1,11 @@
+[package]
+name = "syntactic_heap"
+version = "0.1.0"
+edition = "2018"
+license = "MIT OR Apache-2.0"
+description = "A framework designed for representing Abstract Syntax Trees"
+homepage = "https://github.com/DavePearce/SyntacticHeap.rs"
+repository = "https://github.com/DavePearce/SyntacticHeap.rs"
+readme = "README.md"
+
+[dependencies]
