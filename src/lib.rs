@@ -1,3 +1,4 @@
+use std::ops::Deref;
 // =============================================================================
 // SyntacticHeap
 // =============================================================================
@@ -20,13 +21,13 @@ impl<'a,T> SyntacticHeap<T> {
 	&self.nodes[index]
     }
     /// Push a new node onto the tree
-    pub fn push(&'a mut self, kind: T) -> Ref {
+    pub fn push(&'a mut self, kind: T) -> Ref<'a,T> {
 	// Save current size of tree
 	let index = self.nodes.len();
 	// Push new node in place	
 	self.nodes.push(kind);
 	// Return its index
-	Ref::new(index)
+	Ref::new(self,index)
     }
 }
 
@@ -37,16 +38,21 @@ impl<'a,T> SyntacticHeap<T> {
 /// A temporary reference into a SyntacticHeap.  This identifies a
 /// node within the heap.
 #[derive(Copy,Clone)]
-pub struct Ref {
+pub struct Ref<'a,T> {
+    parent: &'a SyntacticHeap<T>,
     index: usize
 }
 
 /// Mechanism for constructing refs
-impl Ref {
-    pub fn new(index: usize) -> Self {
-	Ref{index}
+impl<'a,T> Ref<'a,T> {
+    pub fn new(parent: &'a SyntacticHeap<T>, index: usize) -> Self {
+	Ref{parent,index}
     }
 
+    pub fn get(&self) -> &T {
+	&self.parent.nodes[self.index]
+    }
+    
     /// Get the raw index for the node this reference refers to in the
     /// enclosing SyntacticHeap.    
     pub fn raw_index(&self) -> usize {
@@ -54,15 +60,22 @@ impl Ref {
     }
 }
 
-// impl<'a,T> PartialEq for Ref<'a,T> {
-//     fn eq(&self, other: &Ref<'a,T>) -> bool {
-// 	// Coerce into pointers to enable comparison
-// 	let p1 = self.parent as *const SyntacticHeap<T>;
-// 	let p2 = other.parent as *const SyntacticHeap<T>;
-// 	// Do the comparison
-// 	(p1 == p2) && (self.index == other.index)
-//     }
-// }
+impl<'a,T> PartialEq for Ref<'a,T> {
+    fn eq(&self, other: &Ref<'a,T>) -> bool {
+	// Coerce into pointers to enable comparison
+	let p1 = self.parent as *const SyntacticHeap<T>;
+	let p2 = other.parent as *const SyntacticHeap<T>;
+	// Do the comparison
+	(p1 == p2) && (self.index == other.index)
+    }
+}
+
+impl<'a,T> Deref for Ref<'a,T> {
+    type Target = T;
+    fn deref(&self) -> &T {
+	self.get()
+    }
+}
 
 // Allow conversion from things to references, provided a suitable
 // parent pointer is available.
