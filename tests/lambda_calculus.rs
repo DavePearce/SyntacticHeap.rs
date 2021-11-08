@@ -65,6 +65,25 @@ impl Node for Term {
     }
 }
 
+impl IntoIterator for &Term {
+    type Item = usize;
+    type IntoIter = <Vec<usize> as IntoIterator>::IntoIter;
+
+    fn into_iter(self) -> Self::IntoIter {
+	match self {
+	    Term::Fun(s,e) => {
+		vec![e.index].into_iter()
+	    }
+	    Term::App(e1,e2) => {
+		vec![e1.index,e2.index].into_iter()
+	    }
+	    _ => {
+		vec![].into_iter()
+	    }
+	}
+    }
+}
+
 impl fmt::Display for Term {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 	write!(f,"{:?}",self)
@@ -99,7 +118,7 @@ impl<'a> From<Ref<'a,Term>> for Expr {
 /// =======================================================
 
 #[test]
-fn test_01() {
+fn test_heap_01() {
     let x = "x".to_string();        
     // Initiailise heap
     let mut heap = SyntacticHeap::<Term>::new();
@@ -111,7 +130,7 @@ fn test_01() {
 }
 
 #[test]
-fn test_02() {
+fn test_heap_02() {
     let x = "x".to_string();    
     // Initiailise heap
     let mut heap = SyntacticHeap::<Term>::new();
@@ -123,7 +142,7 @@ fn test_02() {
 }
 
 #[test]
-fn test_03() {
+fn test_heap_03() {
     let x = "x".to_string();    
     // Initiailise heap
     let mut heap = SyntacticHeap::<Term>::new();
@@ -134,8 +153,45 @@ fn test_03() {
     assert_eq!(r2.raw_index(),1);
 }
 
+//
+
 #[test]
-fn test_04() {
+fn test_iter_01() {
+    let x = "x".to_string();        
+    // Initiailise heap
+    let t = Term::Var(x);
+    // Sanity check(s)
+    for i in &t {
+	assert!(false);
+    }
+}
+
+#[test]
+fn test_iter_02() {
+    let x = "x".to_string();        
+    // Initiailise heap
+    let t = Term::Fun(x, Expr{index:123});
+    // Sanity check(s)
+    for i in &t {
+	assert_eq!(i,123);
+    }
+}
+
+#[test]
+fn test_iter_03() {
+    let x = "x".to_string();        
+    // Initiailise heap
+    let t = Term::App(Expr{index:123},Expr{index:234});
+    // Sanity check(s)
+    for i in &t {
+	assert!((i == 123) || (i == 234));
+    }
+}
+
+//
+
+#[test]
+fn test_clone_01() {
     let x = "x".to_string();    
     // Initiailise heap
     let mut heap = SyntacticHeap::<Term>::new();
