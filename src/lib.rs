@@ -1,4 +1,22 @@
+use std::fmt;
 use std::ops::Deref;
+
+// =============================================================================
+// Node
+// =============================================================================
+
+/// Generic methods required for all nodes
+pub trait Node {
+    /// Return number of children
+    fn len(&self) -> usize;
+
+    /// Get ith child
+    fn get(&self, index: usize) -> Option<usize>;
+
+    /// Substitute children of this node
+    fn substitute(&self, children: &[usize]) -> Self;
+}
+
 // =============================================================================
 // SyntacticHeap
 // =============================================================================
@@ -7,7 +25,8 @@ pub struct SyntacticHeap<T> {
     nodes: Vec<T>
 }
 
-impl<'a,T> SyntacticHeap<T> {
+impl<'a,T> SyntacticHeap<T>
+where T: Node {
     
     pub fn new() -> SyntacticHeap<T> {
 	SyntacticHeap{nodes: Vec::new()}
@@ -28,6 +47,33 @@ impl<'a,T> SyntacticHeap<T> {
 	self.nodes.push(kind);
 	// Return its index
 	Ref::new(self,index)
+    }
+    /// Clone node into this heap
+    pub fn deep_clone(&'a mut self, index: usize) -> Ref<'a,T> {
+	let n = &self.nodes[index];
+	let len = n.len();
+	// Create child array
+	let mut children : Vec<usize> = Vec::new();
+	// Iterate items
+	for i in 0..len {
+	    children.push(n.get(i).unwrap());
+	}
+	// Final substitution
+	self.push(n.substitute(&children[..]))
+    }
+}
+
+impl<T> fmt::Display for SyntacticHeap<T>
+where T : fmt::Display {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+	let mut first = true;
+	write!(f,"[");
+	for item in &self.nodes {
+	    if !first { write!(f,","); }
+	    first = false;
+	    write!(f,"{}",item);
+	}
+	write!(f,"]")
     }
 }
 
@@ -72,6 +118,7 @@ impl<'a,T> PartialEq for Ref<'a,T> {
 
 impl<'a,T> Deref for Ref<'a,T> {
     type Target = T;
+    
     fn deref(&self) -> &T {
 	self.get()
     }
