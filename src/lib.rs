@@ -50,7 +50,7 @@ where T: Node {
     }
     /// Clone node into this heap
     pub fn deep_clone(&'a mut self, index: usize) -> Ref<'a,T> {
-	let n = &self.nodes[index];
+	let mut n = &self.nodes[index];
 	let len = n.len();
 	// Create child array
 	let mut children : Vec<usize> = Vec::new();
@@ -58,6 +58,13 @@ where T: Node {
 	for i in 0..len {
 	    children.push(n.get(i).unwrap());
 	}
+	// Do the deep clone
+	for i in 0..len {
+	    let r = self.deep_clone(children[i]);
+	    children[i] = r.raw_index();
+	}
+	// Reborrow
+	n = &self.nodes[index];
 	// Final substitution
 	self.push(n.substitute(&children[..]))
     }
