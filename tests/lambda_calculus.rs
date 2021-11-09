@@ -177,9 +177,28 @@ fn test_clone_01() {
     let e2 = Expr::new(&mut heap,Term::Fun(x.clone(),e1));
     // Deep clone
     heap.deep_clone(e2.index);
-    //
-    println!("HEAP={}",heap);
     // Sanity Check(s)
     assert_eq!(heap.get(2), &Term::Var(x.clone()));
     assert_eq!(heap.get(3), &Term::Fun(x,Expr{index:2}));    
 }
+
+#[test]
+fn test_clone_02() {
+    let x = "x".to_string();
+    let y = "y".to_string();
+    // Initiailise heap
+    let mut heap = SyntacticHeap::<Term>::new();
+    // Create node(s)
+    let e1 = Expr::new(&mut heap,Term::Var(x.clone()));
+    let e2 = Expr::new(&mut heap,Term::Var(y.clone()));    
+    let e3 = Expr::new(&mut heap,Term::App(e1,e2));
+    // Deep clone
+    heap.deep_clone(e3.index);
+    //
+    println!("HEAP={}",heap);
+    // Sanity Check(s)
+    assert_eq!(heap.get(3), &Term::Var(x.clone()));
+    assert_eq!(heap.get(4), &Term::Var(y.clone()));
+    assert_eq!(heap.get(5), &Term::App(Expr{index:3},Expr{index:4}));    
+}
+
