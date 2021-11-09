@@ -1,12 +1,12 @@
 use std::fmt;
-
 use syntactic_heap::SyntacticHeap;
-use syntactic_heap::Node;
+use syntactic_heap::Substitute;
 use syntactic_heap::Ref;
+use Term::*;
 
 /// A minimalist term language based on the lambda calculus.  This is
-/// intended to demonstrate some aspects only of the SyntacticHeap
-/// API.
+/// intended to demonstrate some aspects of the SyntacticHeap API
+/// (though not all).
 #[derive(Clone,Debug,PartialEq)]
 enum Term {
     /// Function Delection `&x -> e`
@@ -17,64 +17,40 @@ enum Term {
     Var(String)
 }
 
-impl Node for Term {
-    fn len(&self) -> usize {
-	match self {
-	    Term::Fun(_,_) => 1,
-	    Term::App(_,_) => 2,
-	    _ => 0
-	}
-    }
-
-    fn get(&self, ith: usize) -> Option<usize> {
-	match self {
-	    Term::Fun(_,e) => {
-		match ith {
-		    0 => Some(e.index),
-		    _ => None
-			
-		}
-	    }
-	    Term::App(e1,e2) => {
-		match ith {
-		    0 => Some(e1.index),
-		    1 => Some(e2.index),
-		    _ => None
-		}
-	    }
-	    _ => {
-		None
-	    }
-	}
-    }
-
+/// Enable substitution for terms.  This is necessary so they can be
+/// cloned, for example.
+impl Substitute for Term {
     fn substitute(&self, children: &[usize]) -> Term {
-	assert!(children.len() == self.len());
-	//
 	match self {
-	    Term::Fun(s,e) => {
-		Term::Fun(s.clone(),Expr{index:children[0]})
+	    Fun(s,_) => {
+		Fun(s.clone(),Expr{index:children[0]})
 	    }
-	    Term::App(e1,e2) => {
-		Term::App(Expr{index:children[0]},Expr{index:children[1]})
+	    App(_,_) => {
+		App(Expr{index:children[0]},Expr{index:children[1]})
 	    }
-	    Term::Var(s) => {
-		Term::Var(s.clone())
+	    Var(s) => {
+		Var(s.clone())
 	    }
 	}
     }
 }
 
+/// Enable iteration of children for a given term.  This allows a
+/// syntactic heap to traverse the dependency graph, for example to do
+/// garbage collection or cloning, etc.  At the moment, this actually
+/// takes a pretty inefficient approach using Vec's IntoIterator
+/// support.  That's nice and compact, but means we end up cloning
+/// more than necessary.
 impl IntoIterator for &Term {
     type Item = usize;
     type IntoIter = <Vec<usize> as IntoIterator>::IntoIter;
 
     fn into_iter(self) -> Self::IntoIter {
 	match self {
-	    Term::Fun(s,e) => {
+	    Fun(_,e) => {
 		vec![e.index].into_iter()
 	    }
-	    Term::App(e1,e2) => {
+	    App(e1,e2) => {
 		vec![e1.index,e2.index].into_iter()
 	    }
 	    _ => {
@@ -84,6 +60,7 @@ impl IntoIterator for &Term {
     }
 }
 
+/// Simple debug output for terms.
 impl fmt::Display for Term {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 	write!(f,"{:?}",self)
@@ -94,7 +71,8 @@ impl fmt::Display for Term {
 /// Expressions
 /// =======================================================
 
-/// An expression is an arbitrary term.
+/// An expression refers to an arbitrary term in the heap.  Creating a
+/// new reference results in it being pushed onto the heap.
 #[derive(Clone,Copy,Debug,PartialEq)]
 struct Expr {
     index: usize
@@ -161,7 +139,7 @@ fn test_iter_01() {
     // Initiailise heap
     let t = Term::Var(x);
     // Sanity check(s)
-    for i in &t {
+    for _i in &t {
 	assert!(false);
     }
 }
@@ -179,8 +157,7 @@ fn test_iter_02() {
 
 #[test]
 fn test_iter_03() {
-    let x = "x".to_string();        
-    // Initiailise heap
+    // Initiailise Term
     let t = Term::App(Expr{index:123},Expr{index:234});
     // Sanity check(s)
     for i in &t {
@@ -206,4 +183,3 @@ fn test_clone_01() {
     assert_eq!(heap.get(2), &Term::Var(x.clone()));
     assert_eq!(heap.get(3), &Term::Fun(x,Expr{index:2}));    
 }
-

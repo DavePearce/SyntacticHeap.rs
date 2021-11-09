@@ -5,14 +5,8 @@ use std::ops::Deref;
 // Node
 // =============================================================================
 
-/// Generic methods required for all nodes
-pub trait Node {
-    /// Return number of children
-    fn len(&self) -> usize;
-
-    /// Get ith child
-    fn get(&self, index: usize) -> Option<usize>;
-
+/// Generic methods required
+pub trait Substitute {
     /// Substitute children of this node
     fn substitute(&self, children: &[usize]) -> Self;
 }
@@ -25,8 +19,7 @@ pub struct SyntacticHeap<T> {
     nodes: Vec<T>
 }
 
-impl<'a,T> SyntacticHeap<T>
-where T: Node {
+impl<'a,T> SyntacticHeap<T> {
     
     pub fn new() -> SyntacticHeap<T> {
 	SyntacticHeap{nodes: Vec::new()}
@@ -48,18 +41,20 @@ where T: Node {
 	// Return its index
 	Ref::new(self,index)
     }
+}
+
+impl<'a,T> SyntacticHeap<T>
+where
+    T : Substitute,
+    for <'b> &'b T : IntoIterator<Item=usize>
+{
     /// Clone node into this heap
     pub fn deep_clone(&'a mut self, index: usize) -> Ref<'a,T> {
-	let mut n = &self.nodes[index];
-	let len = n.len();
+        let mut n = &self.nodes[index];
 	// Create child array
-	let mut children : Vec<usize> = Vec::new();
-	// Iterate items
-	for i in 0..len {
-	    children.push(n.get(i).unwrap());
-	}
-	// Do the deep clone
-	for i in 0..len {
+        let mut children : Vec<usize> = n.into_iter().collect();
+        // Do the deep clone
+	for i in 0..children.len() {
 	    let r = self.deep_clone(children[i]);
 	    children[i] = r.raw_index();
 	}
