@@ -79,6 +79,21 @@ where T : fmt::Display {
     }
 }
 
+impl<T> fmt::Debug for SyntacticHeap<T>
+where T : fmt::Debug {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+	let mut first = true;
+	write!(f,"[");
+	for item in &self.nodes {
+	    if !first { write!(f,","); }
+	    first = false;
+	    write!(f,"{:?}",item);
+	}
+	write!(f,"]")
+    }
+}
+
+
 // =============================================================================
 // Ref
 // =============================================================================
