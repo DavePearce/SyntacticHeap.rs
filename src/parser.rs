@@ -4,37 +4,34 @@ use crate::SyntacticHeap;
 // Grammar
 // ================================================
 
-#[derive(Clone,Debug,PartialEq)]
-pub enum Node<S,T> {
-    /// A fixed string of characters in the underlying stream.
-    Terminal(fn(S)->T,Vec<S>),
-    /// A named (non-terminal) rule. 
-    NonTerminal(Vec<Term>),
-    /// A set of rules grouped together.
-    Group(Vec<Term>)    
-}
-
 // A grammar is itself a syntactic heap.
-pub type Grammar<S,T> = SyntacticHeap<Node<S,T>>;
-
-impl<S,T> Grammar<S,T> {
-    pub fn parse(&self, input: &[S]) -> bool {
-	false
-    }
+pub struct Grammar<T> {
+    reduce: fn(&[T])->Option<(usize,T)>
 }
 
-// ================================================
-// Term
-// ================================================
-
-#[derive(Clone,Copy,Debug,PartialEq)]
-pub struct Term(pub usize);
-
-impl Term {
-    pub fn new<S,T>(gr: &mut Grammar<S,T>, t : Node<S,T>) -> Self {
-        // Create new node
-        let index = gr.push(t).raw_index();
-        // Done
-        Term(index)
+impl<T:Copy> Grammar<T> {
+    pub fn new(r: fn(&[T])->Option<(usize,T)>) -> Self {
+	Grammar{reduce: r}
+    }
+    // A very simple reduction
+    pub fn parse(&self, input: &[T]) -> Vec<T> {
+	// Create empty stack
+	let mut stack : Vec<T> = Vec::new();
+	// Iterate over input stream
+	for i in 0..input.len() {
+	    // Shift
+	    stack.push(input[i]);	    
+	    // Reduce
+	    let r = (self.reduce)(&stack);
+	    // Decide what to do.
+	    match r {
+		Some((n,t)) => {
+		    stack.truncate(stack.len()-n);
+		    stack.push(t);
+		}
+		None => {}
+	    }	    
+	}
+	stack
     }
 }
